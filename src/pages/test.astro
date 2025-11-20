@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/src/styles/global.css" />
+    <title>API 測試</title>
+    <style>
+      .row { display:flex; gap:8px; margin-bottom:12px; }
+      button { padding:6px 10px; }
+      pre { background:#f5f5f5; padding:12px; border-radius:8px; overflow:auto; }
+      input, textarea { padding:6px; }
+    </style>
+  </head>
+  <body>
+    <h1>API 測試</h1>
+    <div class="row">
+      <input id="reg-username" placeholder="註冊帳號" style="width:160px" />
+      <input id="reg-email" placeholder="Email" style="width:200px" />
+      <input id="reg-password" type="password" placeholder="密碼" style="width:160px" />
+      <button id="btn-register">註冊</button>
+    </div>
+    <div class="row">
+      <input id="login-username" placeholder="登入帳號" style="width:160px" />
+      <input id="login-password" type="password" placeholder="密碼" style="width:160px" />
+      <button id="btn-login">一鍵登入</button>
+      <button id="btn-login-manual">登入</button>
+      <button id="btn-me">取我</button>
+      <button id="btn-list">時間軸</button>
+      <button id="btn-refresh">續期</button>
+      <button id="btn-logout">登出</button>
+    </div>
+    <div class="row">
+      <textarea id="content" placeholder="內容" rows="3" style="width:320px"></textarea>
+      <input id="images" type="file" multiple accept="image/jpeg,image/png,image/webp" />
+      <button id="btn-post">發文</button>
+    </div>
+    <div class="row">
+      <input id="postId" placeholder="貼文ID" style="width:160px" />
+      <button id="btn-like">按讚</button>
+      <input id="commentText" placeholder="留言內容" style="width:200px" />
+      <button id="btn-comment">留言</button>
+      <button id="btn-get-post">取單文</button>
+    </div>
+    <pre id="out"></pre>
+    <script type="module">
+      import { getMe, listPosts, createPost, likePost, createComment, logout, login, register, getPost } from "/src/lib/api.ts"
+      import { refreshToken } from "/src/lib/refresh.ts"
+      import { setToken, getToken } from "/src/lib/token.ts"
+      try {
+        const url = new URL(window.location.href)
+        const t = url.searchParams.get("t")
+        const e = Number(url.searchParams.get("e") || 0)
+        if (t) {
+          setToken(t, e)
+          url.search = ""
+          history.replaceState(null, document.title, url.toString())
+        }
+      } catch {}
+      async function doLogin() {
+        try {
+          const r = await login("admin", "ca123456789")
+          if (!r.success) { show(r); return }
+          const t = (r.data && r.data.access_token) || ""
+          const e = (r.data && r.data.access_expires_in) || 0
+          if (t) setToken(t, e)
+          show({ success:true, data:r.data })
+        } catch (e) {
+          show({ success:false, error:String(e.message||e) })
+        }
+      }
+      if (!getToken()) doLogin()
+      const out = document.getElementById('out')
+      function show(obj) { out.textContent = JSON.stringify(obj, null, 2) }
+
+      document.getElementById('btn-register').addEventListener('click', async () => {
+        try {
+          const u = String(document.getElementById('reg-username').value || '').trim()
+          const e = String(document.getElementById('reg-email').value || '').trim()
+          const p = String(document.getElementById('reg-password').value || '').trim()
+          show(await register(u, e, p))
+        } catch (err) {
+          show({ success:false, error:String(err.message||err) })
+        }
+      })
+      document.getElementById('btn-login-manual').addEventListener('click', async () => {
+        try {
+          const u = String(document.getElementById('login-username').value || '').trim()
+          const p = String(document.getElementById('login-password').value || '').trim()
+          const r = await login(u, p)
+          if (!r.success) { show(r); return }
+          const t = (r.data && r.data.access_token) || ''
+          const e = (r.data && r.data.access_expires_in) || 0
+          if (t) setToken(t, e)
+          show({ success:true, data:r.data })
+        } catch (err) {
+          show({ success:false, error:String(err.message||err) })
+        }
+      })
+      document.getElementById('btn-me').addEventListener('click', async () => {
+        try { show(await getMe()) } catch (e) { show({ success:false, error:String(e.message||e) }) }
+      })
+      document.getElementById('btn-list').addEventListener('click', async () => {
+        try { show(await listPosts({ limit: 5 })) } catch (e) { show({ success:false, error:String(e.message||e) }) }
+      })
+      document.getElementById('btn-refresh').addEventListener('click', async () => {
+        try { const t = await refreshToken(); show({ success:true, access_token:t }) } catch (e) { show({ success:false, error:String(e.message||e) }) }
+      })
+      document.getElementById('btn-logout').addEventListener('click', async () => {
+        try { show(await logout()) } catch (e) { show({ success:false, error:String(e.message||e) }) }
+      })
+      document.getElementById('btn-post').addEventListener('click', async () => {
+        try {
+          const content = String(document.getElementById('content').value || '').trim()
+          const filesInput = document.getElementById('images')
+          const files = Array.from(filesInput.files || [])
+          show({ action:"createPost:start", contentLength: content.length, files: files.map(f=>({name:f.name,type:f.type,size:f.size})) })
+          const r = await createPost(content, files)
+          show(r)
+        } catch (e) {
+          show({ success:false, error:String(e.message||e) })
+        }
+      })
+      document.getElementById('btn-like').addEventListener('click', async () => {
+        try { const id = String(document.getElementById('postId').value || '').trim(); show(await likePost(id)) } catch (e) { show({ success:false, error:String(e.message||e) }) }
+      })
+      document.getElementById('btn-comment').addEventListener('click', async () => {
+        try { const id = String(document.getElementById('postId').value || '').trim(); const text = String(document.getElementById('commentText').value || '').trim(); show(await createComment(id, text)) } catch (e) { show({ success:false, error:String(e.message||e) }) }
+      })
+      document.getElementById('btn-get-post').addEventListener('click', async () => {
+        try { const id = String(document.getElementById('postId').value || '').trim(); show(await getPost(id)) } catch (e) { show({ success:false, error:String(e.message||e) }) }
+      })
+      document.getElementById('btn-login').addEventListener('click', async () => { await doLogin() })
+    </script>
+  </body>
+</html>

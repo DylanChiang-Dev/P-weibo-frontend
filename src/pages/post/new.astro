@@ -1,0 +1,12 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { NewPostForm } from "../../components/NewPostForm";
+
+export const prerender = false;
+---
+
+<Layout title="發布新帖子 | P-Weibo">
+  <div class="container mx-auto max-w-2xl p-4">
+    <NewPostForm client:load />
+  </div>
+</Layout>

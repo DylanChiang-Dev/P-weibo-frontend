@@ -1,0 +1,57 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { PostList } from "../components/PostList";
+import { getUserProfile } from "../lib/api";
+
+export const prerender = false;
+
+// Fetch admin profile for the header
+// In a real app, this might be configurable. For now, we use the main admin email.
+const adminEmail = "3331322@gmail.com";
+const { data: user } = await getUserProfile(adminEmail);
+
+const displayName = user?.displayName || "Dylan Chiang";
+const avatar =
+  user?.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=Dylan";
+---
+
+<Layout title="朋友圈">
+  <div class="min-h-screen bg-white pb-20">
+    {/* Cover Header - WeChat Moments Style */}
+    <div class="relative mb-12">
+      {/* Cover Image */}
+      <div class="h-72 w-full bg-gray-700 overflow-hidden">
+        <img
+          src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=1600&q=80"
+          alt="Cover"
+          class="w-full h-full object-cover"
+        />
+      </div>
+
+      {/* User Info - Name at bottom of cover, Avatar half overlapping */}
+      <div
+        class="absolute bottom-0 right-4 flex items-end gap-3 translate-y-1/2"
+      >
+        {/* Name - at the bottom edge of cover image */}
+        <span
+          class="text-white font-medium text-base drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] pb-10"
+        >
+          {displayName}
+        </span>
+        {/* Avatar - half on cover, half below */}
+        <div
+          class="h-20 w-20 rounded-md overflow-hidden border-[3px] border-white bg-white shadow-lg"
+        >
+          <img src={avatar} alt="Avatar" class="w-full h-full object-cover" />
+        </div>
+      </div>
+    </div>
+
+    <div class="container mx-auto max-w-2xl px-4">
+      {/* Feed */}
+      <div class="space-y-8">
+        <PostList client:load />
+      </div>
+    </div>
+  </div>
+</Layout>

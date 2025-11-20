@@ -1,0 +1,11 @@
+---
+const { message, actionLabel, onAction } = Astro.props
+---
+<div style="background:#fee2e2;color:#991b1b;padding:12px;border-radius:8px;display:flex;gap:8px;align-items:center;">
+  <span>{message}</span>
+  {actionLabel && onAction && (
+    <button style="margin-left:auto;background:#fca5a5;color:#7f1d1d;border:none;padding:6px 10px;border-radius:6px;cursor:pointer" onClick={onAction}>
+      {actionLabel}
+    </button>
+  )}
+</div>

@@ -1,0 +1,12 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { LoginForm } from "../components/LoginForm";
+
+export const prerender = false;
+---
+
+<Layout title="登入 | P-Weibo">
+  <div class="flex items-center justify-center min-h-[calc(100vh-4rem)] p-4">
+    <LoginForm client:load />
+  </div>
+</Layout>

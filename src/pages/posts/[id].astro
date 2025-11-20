@@ -1,0 +1,50 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { getPost } from "../../lib/api";
+import { PostDetailContainer } from "../../components/PostDetailContainer";
+
+const { id } = Astro.params;
+let post = null;
+let error = null;
+
+if (id) {
+  const res = await getPost(Number(id));
+  if (res.success) {
+    post = res.data;
+  } else {
+    error = res.error;
+  }
+}
+
+export const prerender = false;
+---
+
+<Layout title={post ? `帖子詳情` : "帖子未找到"}>
+  <div class="container mx-auto max-w-2xl px-4 py-6">
+    <div class="mb-6">
+      <a href="/" class="text-blue-600 hover:underline flex items-center gap-1">
+        &larr; 返回首頁
+      </a>
+    </div>
+
+    {
+      error && (
+        <div
+          class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative"
+          role="alert"
+        >
+          <strong class="font-bold">錯誤:</strong>
+          <span class="block sm:inline"> {error}</span>
+        </div>
+      )
+    }
+
+    {
+      post && (
+        <div>
+          <PostDetailContainer initialPost={post} client:load />
+        </div>
+      )
+    }
+  </div>
+</Layout>
