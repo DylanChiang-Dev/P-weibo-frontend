@@ -23,7 +23,19 @@ export function getApiBaseUrl(): string {
  */
 export function getApiUrl(path: string): string {
     if (path.startsWith("http")) return path
-    const base = getApiBaseUrl()
+    let base = getApiBaseUrl()
+
+    // Remove trailing slash from base
+    if (base.endsWith("/")) {
+        base = base.slice(0, -1)
+    }
+
+    // Handle double /api case
+    // If base ends with /api and path starts with /api, remove one /api from base
+    if (base.endsWith("/api") && path.startsWith("/api")) {
+        base = base.slice(0, -4)
+    }
+
     return `${base}${path}`
 }
 
