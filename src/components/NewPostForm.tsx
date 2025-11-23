@@ -2,13 +2,15 @@ import React, { useState } from "react"
 import { createPost } from "../lib/api"
 import { Button } from "./ui/Button"
 import { Card, CardContent, CardHeader } from "./ui/Card"
-import { ImagePlus, X, Video } from "lucide-react"
+import { ImagePlus, X, Video, Lock, Globe } from "lucide-react"
 import { toast } from "sonner"
+import { QueryProvider } from "./QueryProvider"
 
-export const NewPostForm: React.FC = () => {
+const NewPostFormContent: React.FC = () => {
     const [content, setContent] = useState("")
     const [files, setFiles] = useState<File[]>([])
     const [videos, setVideos] = useState<File[]>([])
+    const [visibility, setVisibility] = useState<'public' | 'private'>('public')
     const [error, setError] = useState("")
     const [loading, setLoading] = useState(false)
 
@@ -36,7 +38,7 @@ export const NewPostForm: React.FC = () => {
         setLoading(true)
         setError("")
 
-        const res = await createPost(content, files, videos)
+        const res = await createPost(content, files, videos, visibility)
         if (res.success) {
             toast.success("發布成功")
             window.location.href = "/"
@@ -88,6 +90,32 @@ export const NewPostForm: React.FC = () => {
                                 onChange={handleVideoChange}
                             />
                         </label>
+
+                        {/* Visibility Selector */}
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setVisibility('public')}
+                                className={`inline-flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${visibility === 'public'
+                                        ? 'bg-blue-500 text-white'
+                                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                                    }`}
+                            >
+                                <Globe className="h-5 w-5" />
+                                <span>公開</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setVisibility('private')}
+                                className={`inline-flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${visibility === 'private'
+                                        ? 'bg-orange-500 text-white'
+                                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                                    }`}
+                            >
+                                <Lock className="h-5 w-5" />
+                                <span>僅自己可見</span>
+                            </button>
+                        </div>
                     </div>
 
                     {/* Selected Files Summary */}
@@ -160,3 +188,12 @@ export const NewPostForm: React.FC = () => {
         </Card>
     )
 }
+
+export const NewPostForm: React.FC = () => {
+    return (
+        <QueryProvider>
+            <NewPostFormContent />
+        </QueryProvider>
+    )
+}
+

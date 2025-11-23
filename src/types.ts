@@ -4,18 +4,21 @@ export interface User {
   displayName?: string;
   avatar?: string;
   created_at?: string;
+  role?: 'admin' | 'user';
   stats?: {
     posts: number;
   };
 }
 
 export interface PostImage {
+  id: number;
   file_path: string;
   width: number;
   height: number;
 }
 
 export interface PostVideo {
+  id: number;
   file_path: string;
   duration?: number | null;
   thumbnail_path?: string | null;
@@ -36,7 +39,8 @@ export interface Post {
   like_count: number;
   comment_count: number;
   is_liked?: boolean;
-  is_pinned?: boolean; // New field
+  is_pinned?: boolean;
+  visibility?: 'public' | 'private';
 }
 
 export interface AuthResponse {

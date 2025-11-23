@@ -1,59 +1,30 @@
-import React, { useEffect, useState, useRef, useCallback } from "react"
-import { listPosts, likePost, deletePost, getMe } from "../lib/api"
-import { refreshToken } from "../lib/refresh"
-import { getToken } from "../lib/token"
-import type { Post, User } from "../types"
+import React, { useEffect, useRef } from "react"
+import { usePostsInfinite, useLikePost, useDeletePost } from "@/hooks/usePostsQuery"
+import { useCurrentUser } from "@/hooks/useUserQuery"
 import { PostItem } from "./PostItem"
 import { PostSkeleton } from "./PostSkeleton"
-import { Button } from "./ui/Button"
 import { toast } from "sonner"
+import { QueryProvider } from "./QueryProvider"
 
-export const PostList: React.FC = () => {
-    const [posts, setPosts] = useState<Post[]>([])
-    const [nextCursor, setNextCursor] = useState<string | null>(null)
-    const [loading, setLoading] = useState(false)
-    const [currentUser, setCurrentUser] = useState<User | null>(null)
+const PostListContent: React.FC = () => {
     const observerTarget = useRef<HTMLDivElement>(null)
 
-    const fetchUser = async () => {
-        const res = await getMe()
-        if (res.success && res.data) {
-            setCurrentUser(res.data)
-            // If we have user data (via cookie) but no access token (e.g. new tab/cleared storage),
-            // try to refresh the token to ensure we can make authenticated requests.
-            if (!getToken()) {
-                try {
-                    await refreshToken()
-                    console.log("Access token restored via refresh")
-                } catch (e) {
-                    console.warn("Failed to restore access token:", e)
-                }
-            }
-        }
-    }
+    // Use React Query hooks
+    const { data: currentUser } = useCurrentUser()
+    const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage, isLoading } =
+        usePostsInfinite(10)
+    const likeMutation = useLikePost()
+    const deleteMutation = useDeletePost()
 
-    const loadPosts = useCallback(async (cursor?: string) => {
-        if (loading) return
-        setLoading(true)
-        const res = await listPosts({ limit: 10, cursor })
-        if (res.success && res.data) {
-            console.log("Fetched posts:", res.data!.items)
-            setPosts((prev) => (cursor ? [...prev, ...res.data!.items] : res.data!.items))
-            setNextCursor(res.data.next_cursor)
-        }
-        setLoading(false)
-    }, [loading])
+    // Flatten pages into posts array
+    const posts = data?.pages.flatMap((page) => page.items) ?? []
 
-    useEffect(() => {
-        fetchUser()
-        loadPosts()
-    }, [])
-
+    // Infinite scroll observer
     useEffect(() => {
         const observer = new IntersectionObserver(
             (entries) => {
-                if (entries[0].isIntersecting && nextCursor && !loading) {
-                    loadPosts(nextCursor)
+                if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+                    fetchNextPage()
                 }
             },
             { threshold: 1.0 }
@@ -64,35 +35,38 @@ export const PostList: React.FC = () => {
         }
 
         return () => observer.disconnect()
-    }, [nextCursor, loading, loadPosts])
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
-    const handleLike = async (id: number) => {
-        const res = await likePost(id)
-        if (res.success && res.data) {
-            setPosts((prev) =>
-                prev.map((p) => (p.id === id ? { ...p, like_count: res.data!.count } : p))
-            )
-        }
+    const handleLike = (id: number) => {
+        likeMutation.mutate(id)
     }
 
     const handleDelete = async (id: number) => {
         if (!confirm("Are you sure you want to delete this post?")) return
-        const res = await deletePost(id)
-        if (res.success) {
+
+        try {
+            await deleteMutation.mutateAsync(id)
             toast.success("刪除成功")
-            setPosts((prev) => prev.filter((p) => p.id !== id))
-        } else {
+        } catch (error) {
             toast.error("刪除失敗")
         }
     }
 
     const handleUpdate = () => {
-        // Reload the first page to reflect changes (like pinning)
-        // Ideally we should reload the current view, but reloading first page is simplest for now
-        // to ensure pinned post moves to top.
-        setPosts([]) // Clear to force refresh or just reload
-        setNextCursor(null)
-        loadPosts()
+        // React Query will automatically refetch when mutations succeed
+        // No manual refetching needed!
+    }
+
+    if (isLoading) {
+        return (
+            <div className="max-w-2xl mx-auto p-4">
+                <div className="space-y-4">
+                    <PostSkeleton />
+                    <PostSkeleton />
+                    <PostSkeleton />
+                </div>
+            </div>
+        )
     }
 
     return (
@@ -108,7 +82,7 @@ export const PostList: React.FC = () => {
                         onUpdate={handleUpdate}
                     />
                 ))}
-                {loading && (
+                {isFetchingNextPage && (
                     <>
                         <PostSkeleton />
                         <PostSkeleton />
@@ -117,7 +91,7 @@ export const PostList: React.FC = () => {
             </div>
 
             <div ref={observerTarget} className="h-10 flex items-center justify-center mt-4">
-                {!loading && !nextCursor && posts.length > 0 && (
+                {!isFetching && !hasNextPage && posts.length > 0 && (
                     <span className="text-gray-400 text-sm">No more posts</span>
                 )}
             </div>
@@ -125,3 +99,10 @@ export const PostList: React.FC = () => {
     )
 }
 
+export const PostList: React.FC = () => {
+    return (
+        <QueryProvider>
+            <PostListContent />
+        </QueryProvider>
+    )
+}

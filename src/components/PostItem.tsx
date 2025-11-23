@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react"
-import { Heart, MessageSquare, Trash2, User as UserIcon, MessageCircle, Send, Pin, PinOff } from "lucide-react"
-import type { Post, User, Comment } from "../types"
-import { Card, CardContent, CardFooter, CardHeader } from "./ui/Card"
+import { Heart, MessageSquare, Pin, Pencil, Lock } from "lucide-react"
+import { EditPostDialog } from "./EditPostDialog"
+import type { Post, User, Comment } from "@/types"
 import { Button } from "./ui/Button"
 import { createComment, getComments, pinPost, unpinPost } from "../lib/api"
 import { getToken } from "../lib/token"
@@ -27,6 +27,11 @@ export const PostItem: React.FC<PostItemProps> = ({ post, currentUser, onLike, o
     const [isLoadingComments, setIsLoadingComments] = useState(false)
     const [lightboxOpen, setLightboxOpen] = useState(false)
     const [lightboxIndex, setLightboxIndex] = useState(0)
+    const [isEditOpen, setIsEditOpen] = useState(false)
+
+    // Check if user is admin
+    const isAdmin = currentUser?.role === 'admin' || currentUser?.email === '3331322@gmail.com'
+    const canEdit = isAuthor || isAdmin
 
     // Optimistic Like State
     const [isLiked, setIsLiked] = useState(post.is_liked || false)
@@ -63,7 +68,7 @@ export const PostItem: React.FC<PostItemProps> = ({ post, currentUser, onLike, o
 
     // Image Grid Logic
     const getImageGridClass = (count: number) => {
-        if (count === 1) return "grid-cols-1 max-w-[200px]"
+        if (count === 1) return "grid-cols-1 max-w-[300px]"
         if (count === 4) return "grid-cols-2 max-w-[200px]" // 2x2 for 4 images
         return "grid-cols-3 max-w-[300px]" // 3 columns for others
     }
@@ -217,7 +222,7 @@ export const PostItem: React.FC<PostItemProps> = ({ post, currentUser, onLike, o
                                     alt="Post image"
                                     loading="lazy"
                                     className={`${post.images.length === 1
-                                        ? 'max-w-full max-h-[400px] object-contain'
+                                        ? 'w-full max-h-[500px] object-cover object-top'
                                         : 'w-full h-full object-cover'
                                         }`}
                                 />
@@ -251,7 +256,23 @@ export const PostItem: React.FC<PostItemProps> = ({ post, currentUser, onLike, o
                 {/* Meta & Actions */}
                 <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3 text-xs text-gray-400">
-                        <span>{new Date(post.created_at).toLocaleString([], { hour12: false, month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                        <span>{new Date(post.created_at).toLocaleString('zh-TW', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: false
+                        }).replace(/\//g, '-')}</span>
+
+                        {/* Private Indicator */}
+                        {isAuthor && post.visibility === 'private' && (
+                            <span className="flex items-center gap-1 text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">
+                                <Lock className="h-3 w-3" />
+                                <span>僅自己可見</span>
+                            </span>
+                        )}
+
                         {isAuthor && (
                             <>
                                 <button onClick={() => onDelete(post.id)} className="text-[#576b95] hover:underline">
@@ -259,6 +280,9 @@ export const PostItem: React.FC<PostItemProps> = ({ post, currentUser, onLike, o
                                 </button>
                                 <button onClick={handlePin} className="text-[#576b95] hover:underline">
                                     {post.is_pinned ? "取消置頂" : "置頂"}
+                                </button>
+                                <button onClick={() => setIsEditOpen(true)} className="text-[#576b95] hover:underline">
+                                    編輯
                                 </button>
                             </>
                         )}
@@ -342,6 +366,18 @@ export const PostItem: React.FC<PostItemProps> = ({ post, currentUser, onLike, o
                     </div>
                 )}
             </div>
+
+            {/* Edit Dialog */}
+            {isEditOpen && (
+                <EditPostDialog
+                    post={post}
+                    isOpen={isEditOpen}
+                    onClose={() => setIsEditOpen(false)}
+                    onSuccess={() => {
+                        if (onUpdate) onUpdate()
+                    }}
+                />
+            )}
         </div>
     )
 }

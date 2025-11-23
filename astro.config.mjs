@@ -1,4 +1,5 @@
 import { defineConfig } from "astro/config"
+import path from "path"
 
 import tailwind from "@astrojs/tailwind";
 import react from "@astrojs/react";
@@ -13,20 +14,27 @@ export default defineConfig({
   output: "server",
   adapter: cloudflare(),
 
-  // Vite proxy only in development
-  vite: isDev ? {
-    server: {
-      proxy: {
-        "/api": {
-          target,
-          changeOrigin: true,
-          secure: false,
-          cookieDomainRewrite: "localhost",
-          cookiePathRewrite: "/",
-        },
+  // Vite configuration
+  vite: {
+    resolve: {
+      alias: {
+        '@': path.resolve('./src'),
       },
     },
-  } : {},
+    ...(isDev ? {
+      server: {
+        proxy: {
+          "/api": {
+            target,
+            changeOrigin: true,
+            secure: false,
+            cookieDomainRewrite: "localhost",
+            cookiePathRewrite: "/",
+          },
+        },
+      },
+    } : {}),
+  },
 
   integrations: [tailwind(), react()],
 })

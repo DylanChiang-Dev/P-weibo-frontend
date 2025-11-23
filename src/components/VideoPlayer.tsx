@@ -12,6 +12,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, thumbnail, classN
             src={src}
             poster={thumbnail || undefined}
             controls
+            controlsList="nodownload"
+            onContextMenu={(e) => e.preventDefault()}
             preload="metadata"
             className={`w-full rounded-sm bg-black ${className}`}
             style={{ maxHeight: "400px" }}

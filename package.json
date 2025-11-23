@@ -5,12 +5,21 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx,.astro",
+    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx,.astro --fix",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,astro,json,css,md}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,astro,json,css,md}\"",
+    "prepare": "husky install"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.6.11",
     "@astrojs/react": "^4.4.2",
     "@astrojs/tailwind": "^6.0.2",
+    "@tanstack/react-query": "^5.90.10",
     "@types/react": "^19.2.6",
     "@types/react-dom": "^19.2.3",
     "astro": "^5.15.9",
@@ -20,5 +29,24 @@
     "sonner": "^2.0.7",
     "tailwindcss": "^3.4.18",
     "tslib": "^2.8.1"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@typescript-eslint/eslint-plugin": "^8.47.0",
+    "@typescript-eslint/parser": "^8.47.0",
+    "@vitest/ui": "^4.0.13",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-astro": "^1.5.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "husky": "^9.1.7",
+    "jsdom": "^27.2.0",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.6.2",
+    "prettier-plugin-astro": "^0.14.1",
+    "vitest": "^4.0.13"
   }
 }

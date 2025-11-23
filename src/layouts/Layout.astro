@@ -13,8 +13,22 @@ import { Toaster } from "../components/ui/Toaster";
 <html lang="zh-TW">
     <head>
         <meta charset="UTF-8" />
-        <meta name="description" content="P-Weibo Social Platform" />
-        <meta name="viewport" content="width=device-width" />
+        <meta name="description" content="P-Weibo 個人微博/朋友圈 - 分享生活點滴，記錄精彩瞬間" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="keywords" content="微博,朋友圈,社交平台,個人博客" />
+        <meta name="author" content="P-Weibo" />
+        
+        <!-- Open Graph / Facebook -->
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content="P-Weibo 個人微博/朋友圈 - 分享生活點滴，記錄精彩瞬間" />
+        <meta property="og:site_name" content="P-Weibo" />
+        
+        <!-- Twitter -->
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={title} />
+        <meta name="twitter:description" content="P-Weibo 個人微博/朋友圈 - 分享生活點滴，記錄精彩瞬間" />
+        
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <meta name="generator" content={Astro.generator} />
         <title>{title}</title>

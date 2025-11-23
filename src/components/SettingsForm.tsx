@@ -4,10 +4,12 @@ import type { User } from "../types"
 import { Card, CardContent, CardHeader } from "./ui/Card"
 import { Input } from "./ui/Input"
 import { Button } from "./ui/Button"
-import { User as UserIcon, Upload, Camera } from "lucide-react"
+import { User as UserIcon, Camera } from "lucide-react"
+import { resolveMediaUrl } from "../lib/utils"
 import { toast } from "sonner"
+import { QueryProvider } from "./QueryProvider"
 
-export const SettingsForm: React.FC = () => {
+const SettingsFormContent: React.FC = () => {
     const [user, setUser] = useState<User | null>(null)
     const [displayName, setDisplayName] = useState("")
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
@@ -107,7 +109,7 @@ export const SettingsForm: React.FC = () => {
                             <div className="h-24 w-24 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white overflow-hidden">
                                 {avatarPreview ? (
                                     <img
-                                        src={avatarPreview}
+                                        src={resolveMediaUrl(avatarPreview) || ""}
                                         alt="Avatar"
                                         className="h-full w-full object-cover"
                                     />
@@ -157,15 +159,6 @@ export const SettingsForm: React.FC = () => {
                         />
                     </div>
 
-                    {/* 提示信息 - 已移除，因為後端已實現 */}
-                    {/* <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
-            <p className="text-sm text-yellow-800">
-              <strong>注意：</strong> 設置功能需要後端 API 支持。
-              <br />
-              請實現 <code className="bg-yellow-100 px-1 rounded">PUT /api/users/me</code> 端點。
-            </p>
-          </div> */}
-
                     {/* 按鈕 */}
                     <div className="flex gap-3">
                         <Button type="submit" disabled={saving}>
@@ -182,5 +175,13 @@ export const SettingsForm: React.FC = () => {
                 </CardContent>
             </Card>
         </form>
+    )
+}
+
+export const SettingsForm: React.FC = () => {
+    return (
+        <QueryProvider>
+            <SettingsFormContent />
+        </QueryProvider>
     )
 }

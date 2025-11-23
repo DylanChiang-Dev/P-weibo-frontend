@@ -4,12 +4,13 @@ import type { Post, User, Comment } from "../types"
 import { PostItem } from "./PostItem"
 import { CommentList } from "./CommentList"
 import { toast } from "sonner"
+import { QueryProvider } from "./QueryProvider"
 
 interface PostDetailContainerProps {
     initialPost: Post
 }
 
-export const PostDetailContainer: React.FC<PostDetailContainerProps> = ({ initialPost }) => {
+const PostDetailContainerContent: React.FC<PostDetailContainerProps> = ({ initialPost }) => {
     const [post, setPost] = useState<Post>(initialPost)
     const [currentUser, setCurrentUser] = useState<User | null>(null)
     const [comments, setComments] = useState<Comment[]>([])
@@ -59,5 +60,13 @@ export const PostDetailContainer: React.FC<PostDetailContainerProps> = ({ initia
             />
             <CommentList postId={post.id} initialComments={comments} loading={loadingComments} />
         </div>
+    )
+}
+
+export const PostDetailContainer: React.FC<PostDetailContainerProps> = (props) => {
+    return (
+        <QueryProvider>
+            <PostDetailContainerContent {...props} />
+        </QueryProvider>
     )
 }

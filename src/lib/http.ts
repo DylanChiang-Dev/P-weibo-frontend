@@ -1,11 +1,9 @@
 import { getToken } from "./token"
 import { refreshToken } from "./refresh"
+import { getApiUrl } from "@/config/env"
 
 export async function apiRequest(path: string, opts: RequestInit = {}) {
-  // On server (SSR), use full URL. On client, use relative path to leverage Vite proxy.
-  const isServer = import.meta.env.SSR
-  const base = isServer ? (import.meta.env.PUBLIC_API_BASE || "http://localhost:8080") : ""
-  const url = path.startsWith("http") ? path : `${base}${path}`
+  const url = getApiUrl(path)
   const headers = new Headers(opts.headers || {})
   const isProtected = shouldAttachAuth(path, opts)
   if (isProtected) {
@@ -34,7 +32,7 @@ export async function apiRequest(path: string, opts: RequestInit = {}) {
 
 function shouldAttachAuth(path, opts) {
   const p = typeof path === "string" ? path : ""
-  if (p.includes("/api/token/refresh") || p.includes("/api/logout")) return false
+  if (p.includes("/api/token/refresh")) return false
   return true
 }
 
