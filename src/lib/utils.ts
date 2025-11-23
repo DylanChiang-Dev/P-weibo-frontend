@@ -11,22 +11,30 @@ export function resolveMediaUrl(filePath: string | undefined | null): string | n
     if (!filePath) return null
     if (filePath.startsWith("http")) return filePath
 
-    const base = import.meta.env.PUBLIC_API_BASE || "http://localhost:8080"
+    let base = import.meta.env.PUBLIC_API_BASE || "http://localhost:8080"
+
+    // Static assets are served from root, not /api
+    if (base.endsWith("/api")) {
+        base = base.slice(0, -4)
+    }
 
     // 處理後端返回的絕對服務器路徑
-    // 例如: /var/www/project/storage/uploads/xxx.mp4 -> /uploads/xxx.mp4
     let cleanPath = filePath
-    if (cleanPath.includes("/storage/uploads/")) {
-        cleanPath = "/uploads/" + cleanPath.split("/storage/uploads/")[1]
-    } else if (cleanPath.startsWith("/")) {
+
+    // Handle /public/uploads/ (e.g. /www/wwwroot/.../public/uploads/xxx.webp)
+    if (cleanPath.includes("/public/uploads/")) {
+        cleanPath = "uploads/" + cleanPath.split("/public/uploads/")[1]
+    }
+    // Handle /storage/uploads/ (Laravel default)
+    else if (cleanPath.includes("/storage/uploads/")) {
+        cleanPath = "uploads/" + cleanPath.split("/storage/uploads/")[1]
+    }
+    else if (cleanPath.startsWith("/")) {
         cleanPath = cleanPath.slice(1)
     }
 
     const cleanBase = base.endsWith("/") ? base : `${base}/`
-    // 如果 cleanPath 已經包含 uploads/ 且 base 也包含（雖然不太可能），這裡簡單拼接即可
-    // 注意：如果 cleanPath 以 / 開頭，上面已經處理了
-
-    return `${cleanBase}${cleanPath.startsWith("/") ? cleanPath.slice(1) : cleanPath}`
+    return `${cleanBase}${cleanPath}`
 }
 
 /**
