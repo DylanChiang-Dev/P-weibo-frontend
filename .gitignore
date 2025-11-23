@@ -35,3 +35,6 @@ cookies.txt
 *.mp4
 *.mov
 *.avi
+
+# WordPress migration temporary files
+scripts/wordpress-media/
