@@ -8,9 +8,12 @@
  * @returns API 基礎地址
  */
 export function getApiBaseUrl(): string {
-    const isServer = import.meta.env.SSR
+    // In production, use the environment variable. In dev, default to localhost
     const base = import.meta.env.PUBLIC_API_BASE || "http://localhost:8080"
-    return isServer ? base : ""
+
+    // Always return the base URL, even on client side
+    // This allows cross-domain requests to the separate backend (pyqapi.3331322.xyz)
+    return base
 }
 
 /**
