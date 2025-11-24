@@ -31,7 +31,7 @@ export const UPLOAD_LIMITS = {
     MAX_IMAGES: 9,
     MAX_VIDEOS: 1,
     ALLOWED_IMAGE_TYPES: ["image/jpeg", "image/png", "image/gif", "image/webp"],
-    ALLOWED_VIDEO_TYPES: ["video/mp4", "video/webm"],
+    ALLOWED_VIDEO_TYPES: ["video/mp4", "video/webm", "video/quicktime"],
 } as const
 
 /**
