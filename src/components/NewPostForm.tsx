@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader } from "./ui/Card"
 import { ImagePlus, X, Video, Lock, Globe } from "lucide-react"
 import { toast } from "sonner"
 import { QueryProvider } from "./QueryProvider"
+import { UPLOAD_LIMITS } from "@/config/api"
+import { validateVideoFile, validateVideoCount, validateImageFile, validateImageCount } from "@/lib/validation"
 
 const NewPostFormContent: React.FC = () => {
     const [content, setContent] = useState("")
@@ -16,18 +18,64 @@ const NewPostFormContent: React.FC = () => {
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
-            setFiles(prev => [...prev, ...Array.from(e.target.files || [])])
+            const newImages = Array.from(e.target.files)
+            const validImages: File[] = []
+            
+            // Validate each image
+            for (const img of newImages) {
+                const error = validateImageFile(img)
+                if (error) {
+                    toast.error(error)
+                } else {
+                    validImages.push(img)
+                }
+            }
+            
+            // Check total count
+            const totalImages = [...files, ...validImages]
+            const countError = validateImageCount(totalImages)
+            if (countError) {
+                toast.error(countError)
+                // Only add images up to the limit
+                const remaining = UPLOAD_LIMITS.MAX_IMAGES - files.length
+                if (remaining > 0) {
+                    setFiles(prev => [...prev, ...validImages.slice(0, remaining)])
+                }
+                return
+            }
+            
+            setFiles(prev => [...prev, ...validImages])
         }
     }
 
     const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             const newVideos = Array.from(e.target.files)
-            // Simple validation for size (100MB limit)
-            const validVideos = newVideos.filter(v => v.size <= 100 * 1024 * 1024)
-            if (validVideos.length !== newVideos.length) {
-                toast.error("部分視頻超過 100MB 限制，已自動過濾")
+            const validVideos: File[] = []
+            
+            // Validate each video
+            for (const video of newVideos) {
+                const error = validateVideoFile(video)
+                if (error) {
+                    toast.error(error)
+                } else {
+                    validVideos.push(video)
+                }
             }
+            
+            // Check total count
+            const totalVideos = [...videos, ...validVideos]
+            const countError = validateVideoCount(totalVideos)
+            if (countError) {
+                toast.error(countError)
+                // Only add videos up to the limit
+                const remaining = UPLOAD_LIMITS.MAX_VIDEOS - videos.length
+                if (remaining > 0) {
+                    setVideos(prev => [...prev, ...validVideos.slice(0, remaining)])
+                }
+                return
+            }
+            
             setVideos(prev => [...prev, ...validVideos])
         }
     }
