@@ -6,6 +6,8 @@ import { updatePost } from "@/lib/api"
 import { toast } from "sonner"
 import type { Post, PostImage, PostVideo } from "@/types"
 import { X, Upload, Image as ImageIcon, Video as VideoIcon, Lock, Globe } from "lucide-react"
+import { UPLOAD_LIMITS } from "@/config/api"
+import { validateImageFile, validateVideoFile, validateImageCount, validateVideoCount } from "@/lib/validation"
 
 interface EditPostDialogProps {
     post: Post
@@ -58,26 +60,56 @@ export const EditPostDialog: React.FC<EditPostDialogProps> = ({ post, isOpen, on
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || [])
-        const validImages = files.filter(file => file.type.startsWith('image/'))
 
-        if (validImages.length !== files.length) {
-            toast.error("只能上傳圖片文件")
+        // Validate count
+        const currentCount = existingImages.length + newImages.length
+        const countError = validateImageCount(files.length, currentCount)
+        if (countError) {
+            toast.error(countError)
             return
         }
 
-        setNewImages([...newImages, ...validImages])
+        // Validate each file
+        const validFiles: File[] = []
+        for (const file of files) {
+            const error = validateImageFile(file)
+            if (error) {
+                toast.error(error)
+                continue
+            }
+            validFiles.push(file)
+        }
+
+        if (validFiles.length > 0) {
+            setNewImages([...newImages, ...validFiles])
+        }
     }
 
     const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || [])
-        const validVideos = files.filter(file => file.type.startsWith('video/'))
 
-        if (validVideos.length !== files.length) {
-            toast.error("只能上傳影片文件")
+        // Validate count
+        const currentCount = existingVideos.length + newVideos.length
+        const countError = validateVideoCount(files.length, currentCount)
+        if (countError) {
+            toast.error(countError)
             return
         }
 
-        setNewVideos([...newVideos, ...validVideos])
+        // Validate each file
+        const validFiles: File[] = []
+        for (const file of files) {
+            const error = validateVideoFile(file)
+            if (error) {
+                toast.error(error)
+                continue
+            }
+            validFiles.push(file)
+        }
+
+        if (validFiles.length > 0) {
+            setNewVideos([...newVideos, ...validFiles])
+        }
     }
 
     const handleRemoveNewImage = (index: number) => {
