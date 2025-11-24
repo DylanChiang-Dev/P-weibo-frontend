@@ -14,10 +14,15 @@ export async function refreshToken() {
   }
 }
 
+import { getApiUrl } from "@/config/env"
+import { API_ENDPOINTS } from "@/config/api"
+
+// ...
+
 async function doRefresh() {
-  const base = import.meta.env.PUBLIC_API_BASE || "http://localhost:8080"
+  const url = getApiUrl(API_ENDPOINTS.REFRESH_TOKEN)
   // 不再手動發送 refresh_token，讓瀏覽器自動通過 Cookie 發送
-  const res = await fetch(`${base}/api/token/refresh`, {
+  const res = await fetch(url, {
     method: "POST",
     credentials: "include", // Cookie 會自動包含 refresh_token
   })
