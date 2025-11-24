@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react"
-import { usePostsInfinite, useLikePost, useDeletePost } from "@/hooks/usePostsQuery"
+import { usePostsInfinite, useLikePost, useDeletePost, usePinPost, useUnpinPost } from "@/hooks/usePostsQuery"
 import { useCurrentUser } from "@/hooks/useUserQuery"
 import { PostItem } from "./PostItem"
 import { PostSkeleton } from "./PostSkeleton"
@@ -15,6 +15,8 @@ const PostListContent: React.FC = () => {
         usePostsInfinite(10)
     const likeMutation = useLikePost()
     const deleteMutation = useDeletePost()
+    const pinMutation = usePinPost()
+    const unpinMutation = useUnpinPost()
 
     // Flatten pages into posts array
     const posts = data?.pages.flatMap((page) => page.items) ?? []
@@ -52,6 +54,22 @@ const PostListContent: React.FC = () => {
         }
     }
 
+    const handlePin = async (id: number, isPinned: boolean) => {
+        if (!confirm(isPinned ? "取消置頂?" : "置頂此貼文?")) return
+
+        try {
+            if (isPinned) {
+                await unpinMutation.mutateAsync(id)
+                toast.success("已取消置頂")
+            } else {
+                await pinMutation.mutateAsync(id)
+                toast.success("已置頂")
+            }
+        } catch (error) {
+            toast.error("操作失敗")
+        }
+    }
+
     const handleUpdate = () => {
         // React Query will automatically refetch when mutations succeed
         // No manual refetching needed!
@@ -79,6 +97,7 @@ const PostListContent: React.FC = () => {
                         currentUser={currentUser}
                         onLike={handleLike}
                         onDelete={handleDelete}
+                        onPin={handlePin}
                         onUpdate={handleUpdate}
                     />
                 ))}

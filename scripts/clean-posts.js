@@ -6,18 +6,42 @@
 
 import fetch from 'node-fetch';
 
-const API_URL = 'http://localhost:8080/api';
-const EMAIL = '3331322@gmail.com';
-const PASSWORD = 'ca123456789';
+const config = {
+    apiUrl: process.argv.find(arg => arg.startsWith('--api-url='))?.split('=')[1] || 'http://localhost:8080/api',
+    email: process.argv.find(arg => arg.startsWith('--email='))?.split('=')[1] || '3331322@gmail.com',
+    password: process.argv.find(arg => arg.startsWith('--password='))?.split('=')[1] || 'ca123456789',
+};
+
+// Helper to extract JSON from response that may have PHP warnings
+async function safeParseJSON(response) {
+    const text = await response.text();
+    try {
+        // Try to find JSON in the response (after any PHP warnings)
+        const jsonMatch = text.match(/\{[\s\S]*\}$/);
+        if (jsonMatch) {
+            return JSON.parse(jsonMatch[0]);
+        }
+        return JSON.parse(text);
+    } catch (e) {
+        console.error('   ⚠️  響應解析失敗:', text.substring(0, 200));
+        throw new Error(`Invalid JSON: ${text.substring(0, 100)}`);
+    }
+}
 
 async function login() {
-    const res = await fetch(`${API_URL}/login`, {
+    const res = await fetch(`${config.apiUrl}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: EMAIL, password: PASSWORD })
+        body: JSON.stringify({ email: config.email, password: config.password })
     });
-    const data = await res.json();
-    return data.data?.access_token;
+
+    // Use safeParseJSON instead of res.json()
+    try {
+        const data = await safeParseJSON(res);
+        return data.data?.access_token;
+    } catch (e) {
+        return null;
+    }
 }
 
 async function getPosts(token) {
@@ -25,25 +49,30 @@ async function getPosts(token) {
     let cursor = null;
 
     while (true) {
-        const url = cursor ? `${API_URL}/posts?cursor=${cursor}&limit=100` : `${API_URL}/posts?limit=100`;
+        const url = cursor ? `${config.apiUrl}/posts?cursor=${cursor}&limit=100` : `${config.apiUrl}/posts?limit=100`;
         const res = await fetch(url, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        const data = await res.json();
 
-        if (!data.data?.items || data.data.items.length === 0) break;
+        try {
+            const data = await safeParseJSON(res);
+            if (!data.data?.items || data.data.items.length === 0) break;
 
-        posts.push(...data.data.items);
-        cursor = data.data.next_cursor;
+            posts.push(...data.data.items);
+            cursor = data.data.next_cursor;
 
-        if (!cursor) break;
+            if (!cursor) break;
+        } catch (e) {
+            console.error('获取帖子失败:', e.message);
+            break;
+        }
     }
 
     return posts;
 }
 
 async function deletePost(token, postId) {
-    const res = await fetch(`${API_URL}/posts/${postId}`, {
+    const res = await fetch(`${config.apiUrl}/posts/${postId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -51,6 +80,7 @@ async function deletePost(token, postId) {
 }
 
 async function main() {
+    console.log(`配置: API=${config.apiUrl}, Email=${config.email}`);
     console.log('🔐 登錄中...');
     const token = await login();
 
@@ -74,8 +104,8 @@ async function main() {
 
     for (let i = 0; i < posts.length; i++) {
         const post = posts[i];
-        const title = post.content.substring(0, 30) + '...';
-        console.log(`[${i + 1}/${posts.length}] 刪除: ${title}`);
+        const title = post.content ? (post.content.substring(0, 30) + '...') : '(无内容)';
+        console.log(`[${i + 1}/${posts.length}] 刪除 (ID:${post.id}): ${title}`);
 
         const success = await deletePost(token, post.id);
         if (success) {

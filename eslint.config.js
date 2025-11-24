@@ -1,4 +1,6 @@
 import js from "@eslint/js"
+import globals from "globals"
+
 import tsPlugin from "@typescript-eslint/eslint-plugin"
 import tsParser from "@typescript-eslint/parser"
 import reactPlugin from "eslint-plugin-react"
@@ -25,9 +27,9 @@ export default [
                 },
             },
             globals: {
-                browser: true,
-                es2021: true,
-                node: true,
+                ...globals.browser,
+                ...globals.node,
+                ...globals.es2021,
             },
         },
         plugins: {
@@ -55,8 +57,6 @@ export default [
     },
 
     // Astro files
-    {
-        files: ["**/*.astro"],
-        ...astroPlugin.configs.recommended,
-    },
+    ...astroPlugin.configs.recommended,
+
 ]

@@ -3,7 +3,7 @@ import { Heart, MessageSquare, Pin, Pencil, Lock } from "lucide-react"
 import { EditPostDialog } from "./EditPostDialog"
 import type { Post, User, Comment } from "@/types"
 import { Button } from "./ui/Button"
-import { createComment, getComments, pinPost, unpinPost } from "../lib/api"
+import { createComment, getComments } from "../lib/api"
 import { getToken } from "../lib/token"
 import { refreshToken } from "../lib/refresh"
 import { ImageLightbox } from "./ImageLightbox"
@@ -15,10 +15,11 @@ interface PostItemProps {
     currentUser?: User | null
     onLike: (id: number) => void
     onDelete: (id: number) => void
+    onPin: (id: number, isPinned: boolean) => void
     onUpdate?: () => void
 }
 
-export const PostItem: React.FC<PostItemProps> = ({ post, currentUser, onLike, onDelete, onUpdate }) => {
+export const PostItem: React.FC<PostItemProps> = ({ post, currentUser, onLike, onDelete, onPin, onUpdate }) => {
     const isAuthor = currentUser?.id === post.author.id
     const [isCommenting, setIsCommenting] = useState(false)
     const [commentContent, setCommentContent] = useState("")
@@ -95,17 +96,7 @@ export const PostItem: React.FC<PostItemProps> = ({ post, currentUser, onLike, o
     }
 
     const handlePin = async () => {
-        if (!confirm(post.is_pinned ? "取消置頂?" : "置頂此貼文?")) return
-
-        const action = post.is_pinned ? unpinPost : pinPost
-        const res = await action(post.id)
-
-        if (res.success) {
-            toast.success(post.is_pinned ? "已取消置頂" : "已置頂")
-            if (onUpdate) onUpdate()
-        } else {
-            toast.error("操作失敗: " + res.error)
-        }
+        onPin(post.id, post.is_pinned || false)
     }
 
     // Guest Nickname State

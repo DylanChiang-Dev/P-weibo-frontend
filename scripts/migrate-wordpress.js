@@ -51,7 +51,23 @@ async function loginToPWeibo() {
             })
         });
 
-        const data = await res.json();
+        // Get response as text first to handle PHP warnings
+        const text = await res.text();
+
+        // Extract JSON from response (remove PHP warnings)
+        let data;
+        try {
+            // Try to find JSON in the response
+            const jsonMatch = text.match(/\{[\s\S]*\}$/);
+            if (jsonMatch) {
+                data = JSON.parse(jsonMatch[0]);
+            } else {
+                data = JSON.parse(text);
+            }
+        } catch (e) {
+            console.error('❌ 無法解析響應:', text.substring(0, 200));
+            return false;
+        }
 
         if (res.ok && data.data?.access_token) {
             config.adminToken = data.data.access_token;
@@ -70,6 +86,22 @@ async function loginToPWeibo() {
 // Utility functions
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Helper to extract JSON from response that may have PHP warnings
+async function safeParseJSON(response) {
+    const text = await response.text();
+    try {
+        // Try to find JSON in the response (after any PHP warnings)
+        const jsonMatch = text.match(/\{[\s\S]*\}$/);
+        if (jsonMatch) {
+            return JSON.parse(jsonMatch[0]);
+        }
+        return JSON.parse(text);
+    } catch (e) {
+        console.error('   ⚠️  響應解析失敗:', text.substring(0, 200));
+        throw new Error(`Invalid JSON: ${text.substring(0, 100)}`);
+    }
 }
 
 function cleanHtml(html) {
@@ -283,7 +315,7 @@ async function migratePost(wpPost, index, total) {
             return;
         }
 
-        const createData = await createRes.json();
+        const createData = await safeParseJSON(createRes);
         const postId = createData.data.id;
         console.log(`   ✅ 貼文已創建 (ID: ${postId})`);
 
