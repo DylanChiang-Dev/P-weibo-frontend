@@ -266,7 +266,10 @@ export const PostItem: React.FC<PostItemProps> = ({ post, currentUser, onLike, o
 
                         {isAuthor && (
                             <>
-                                <button onClick={() => onDelete(post.id)} className="text-[#576b95] hover:underline">
+                                <button onClick={(e) => {
+                                    e.stopPropagation()
+                                    onDelete(post.id)
+                                }} className="text-[#576b95] hover:underline">
                                     删除
                                 </button>
                                 <button onClick={handlePin} className="text-[#576b95] hover:underline">
