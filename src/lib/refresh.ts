@@ -29,6 +29,9 @@ async function doRefresh() {
   const json = await res.json().catch(() => null)
   if (!res.ok) {
     clearToken()
+    // 如果是 400/401/500 錯誤，說明 Refresh Token 無效或後端異常
+    // 僅清除本地 Token，不強制跳轉，以免影響公開頁面的瀏覽體驗
+    // 由各個頁面或組件自行決定是否需要登入
     throw new Error(json && json.error ? json.error : "Refresh failed")
   }
   // 從響應中提取新的 access_token

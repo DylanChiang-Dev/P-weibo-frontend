@@ -197,6 +197,15 @@ export async function getComments(postId: number): Promise<ApiResponse<Comment[]
   }
 }
 
+export async function deleteComment(id: number): Promise<ApiResponse<void>> {
+  try {
+    await apiRequest(API_ENDPOINTS.DELETE_COMMENT(id), { method: "DELETE" })
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message || String(e) }
+  }
+}
+
 export async function createPost(content: string, images: File[] = [], videos: File[] = [], visibility: 'public' | 'private' = 'public'): Promise<ApiResponse<{ post_id: number }>> {
   const fd = new FormData()
   fd.append("content", content || "")
@@ -268,10 +277,15 @@ export async function updatePost(
   }
 ): Promise<ApiResponse<Post>> {
   try {
-    // If there are media operations, use FormData
-    const hasMediaOps = data.delete_images?.length || data.delete_videos?.length || data.images?.length || data.videos?.length
+    // Check if there are any media operations
+    const hasMediaOps =
+      (data.delete_images && data.delete_images.length > 0) ||
+      (data.delete_videos && data.delete_videos.length > 0) ||
+      (data.images && data.images.length > 0) ||
+      (data.videos && data.videos.length > 0)
 
     if (hasMediaOps) {
+      // Use POST /api/posts/{id}/media for file uploads/media changes
       const formData = new FormData()
 
       // Add text fields
@@ -287,8 +301,8 @@ export async function updatePost(
       data.images?.forEach(file => formData.append('images[]', file))
       data.videos?.forEach(file => formData.append('videos[]', file))
 
-      const json = await apiRequest(API_ENDPOINTS.POST(id), {
-        method: "PATCH",
+      const json = await apiRequest(API_ENDPOINTS.POST_MEDIA(id), {
+        method: "POST",
         body: formData,
       })
 
@@ -300,7 +314,7 @@ export async function updatePost(
       }
       return { success: true, data: post }
     } else {
-      // JSON for text/time only updates
+      // Use PATCH /api/posts/{id} for text-only updates
       const json = await apiRequest(API_ENDPOINTS.POST(id), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },

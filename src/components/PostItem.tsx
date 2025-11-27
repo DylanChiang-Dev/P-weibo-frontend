@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react"
-import { Heart, MessageSquare, Pin, Pencil, Lock } from "lucide-react"
+import { Heart, MessageSquare, Pin, Pencil, Lock, Trash2 } from "lucide-react"
 import { EditPostDialog } from "./EditPostDialog"
 import type { Post, User, Comment } from "@/types"
 import { Button } from "./ui/Button"
-import { createComment, getComments } from "../lib/api"
+import { createComment, getComments, deleteComment } from "../lib/api"
 import { getToken } from "../lib/token"
 import { refreshToken } from "../lib/refresh"
 import { ImageLightbox } from "./ImageLightbox"
@@ -29,6 +29,7 @@ export const PostItem: React.FC<PostItemProps> = ({ post, currentUser, onLike, o
     const [lightboxOpen, setLightboxOpen] = useState(false)
     const [lightboxIndex, setLightboxIndex] = useState(0)
     const [isEditOpen, setIsEditOpen] = useState(false)
+    const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null)
 
     // Check if user is admin
     const isAdmin = currentUser?.role === 'admin' || currentUser?.email === '3331322@gmail.com'
@@ -154,6 +155,33 @@ export const PostItem: React.FC<PostItemProps> = ({ post, currentUser, onLike, o
         if (!res.success) {
             console.warn("Comment failed to save to backend:", res.error)
             // Could revert optimistic update here if needed
+        }
+    }
+
+
+    // ... (inside component)
+
+    const handleDeleteComment = async (commentId: number) => {
+        const res = await deleteComment(commentId)
+        if (res.success) {
+            toast.success("刪除成功")
+            setLocalComments(prev => prev.filter(c => c.id !== commentId))
+            setLocalCommentCount(prev => prev - 1)
+            setDeleteConfirmId(null)
+        } else {
+            // 根据错误类型显示不同的提示
+            const errorMsg = res.error || "未知錯誤"
+
+            if (errorMsg === "Not Found" || errorMsg.includes("404")) {
+                toast.error("無權刪除此評論（後端權限配置問題）")
+            } else if (errorMsg === "Internal Server Error" || errorMsg.includes("500")) {
+                toast.error("後端處理錯誤，請通知開發者查看後端日誌")
+            } else if (errorMsg === "Forbidden" || errorMsg.includes("403")) {
+                toast.error("無權限執行此操作")
+            } else {
+                toast.error("刪除失敗: " + errorMsg)
+            }
+            setDeleteConfirmId(null)
         }
     }
 
@@ -348,11 +376,55 @@ export const PostItem: React.FC<PostItemProps> = ({ post, currentUser, onLike, o
 
                                 {/* Local Comments (Optimistic) */}
                                 {localComments.map((comment) => (
-                                    <div key={comment.id}>
-                                        <span className="text-[#576b95] font-medium">
-                                            {comment.author.displayName || comment.author.email.split('@')[0]}
-                                        </span>
-                                        : {comment.content}
+                                    <div key={comment.id} className="group flex items-start justify-between">
+                                        <div>
+                                            <span className="text-[#576b95] font-medium">
+                                                {comment.author.displayName || comment.author.email.split('@')[0]}
+                                            </span>
+                                            : {comment.content}
+                                        </div>
+
+                                        {currentUser && (currentUser.id === comment.author.id || currentUser.role === 'admin') && (
+                                            deleteConfirmId === comment.id ? (
+                                                <div className="flex items-center gap-1">
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.preventDefault()
+                                                            e.stopPropagation()
+                                                            handleDeleteComment(comment.id)
+                                                        }}
+                                                        className="text-red-500 hover:text-red-600 text-xs px-2 py-0.5 bg-red-50 rounded transition-colors"
+                                                    >
+                                                        確認刪除
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.preventDefault()
+                                                            e.stopPropagation()
+                                                            setDeleteConfirmId(null)
+                                                        }}
+                                                        className="text-gray-400 hover:text-gray-600 text-xs px-2 py-0.5"
+                                                    >
+                                                        取消
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.preventDefault()
+                                                        e.stopPropagation()
+                                                        setDeleteConfirmId(comment.id)
+                                                    }}
+                                                    className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-0.5"
+                                                    title="刪除評論"
+                                                >
+                                                    <Trash2 className="h-3 w-3" />
+                                                </button>
+                                            )
+                                        )}
                                     </div>
                                 ))}
                             </div>

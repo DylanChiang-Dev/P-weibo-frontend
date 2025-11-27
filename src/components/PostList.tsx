@@ -18,8 +18,9 @@ const PostListContent: React.FC = () => {
     const pinMutation = usePinPost()
     const unpinMutation = useUnpinPost()
 
-    // Flatten pages into posts array
-    const posts = data?.pages.flatMap((page) => page.items) ?? []
+    // Flatten pages into posts array and deduplicate by ID
+    const allPosts = data?.pages.flatMap((page) => page.items) ?? []
+    const posts = Array.from(new Map(allPosts.map(post => [post.id, post])).values())
 
     // Infinite scroll observer
     useEffect(() => {

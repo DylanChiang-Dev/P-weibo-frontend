@@ -12,10 +12,12 @@ export const API_ENDPOINTS = {
     // 貼文相關
     POSTS: "/api/posts",
     POST: (id: number) => `/api/posts/${id}`,
+    POST_MEDIA: (id: number) => `/api/posts/${id}/media`,
     POST_LIKE: (id: number) => `/api/posts/${id}/like`,
     POST_PIN: (id: number) => `/api/posts/${id}/pin`,
     POST_UNPIN: (id: number) => `/api/posts/${id}/unpin`,
     POST_COMMENTS: (id: number) => `/api/posts/${id}/comments`,
+    DELETE_COMMENT: (id: number) => `/api/comments/${id}`,
 
     // 用戶相關
     USER: (email: string) => `/api/users/${email}`,
