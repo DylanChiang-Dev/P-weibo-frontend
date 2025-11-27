@@ -8,13 +8,20 @@
  * @returns API 基礎地址
  */
 export function getApiBaseUrl(): string {
-    // In development, return empty string to use Vite proxy
-    // This avoids CORS issues when connecting to production backend
+    // Check if we're running on the server (SSR) vs in the browser
+    const isServer = typeof window === 'undefined'
+
     if (import.meta.env.DEV) {
+        // In SSR, we need a full URL because Node.js fetch can't use relative URLs
+        if (isServer) {
+            // Use the production API or fallback to localhost
+            return import.meta.env.PUBLIC_API_BASE || "http://localhost:4321"
+        }
+        // In browser, return empty string to use Vite proxy (avoids CORS)
         return ""
     }
 
-    // In production, use the environment variable
+    // In production, always use the environment variable
     return import.meta.env.PUBLIC_API_BASE || ""
 }
 
